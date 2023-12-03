@@ -52,5 +52,6 @@ class PNGGenerator(DataGenerator):
                 logging.info(f"Generated file {i}/{self.total_files_to_generate}")
             progress(i+1, self.total_files_to_generate, "Generating PNG Data")
             prev_out_spec = out_path_spec
-            img.save(out_path_spec, format='PNG', bits=8)
+            with self.storage.get_flobj(out_path_spec, mode='wb') as flobj:
+                img.save(flobj, format='PNG', bits=8)
         np.random.seed()

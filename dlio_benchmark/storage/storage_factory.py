@@ -16,6 +16,8 @@
 """
 from dlio_benchmark.storage.file_storage import FileStorage
 from dlio_benchmark.storage.s3_storage import S3Storage
+from dlio_benchmark.storage.fsspec_storage import FsspecStorage
+from dlio_benchmark.utils.config import ConfigArguments
 from dlio_benchmark.common.enumerations import StorageType
 from dlio_benchmark.common.error_code import ErrorCodes
 
@@ -29,5 +31,8 @@ class StorageFactory(object):
             return FileStorage(namespace, framework)
         elif storage_type == StorageType.S3:
             return S3Storage(namespace, framework)
+        elif storage_type == StorageType.FSSPEC_FS:
+            args = ConfigArguments.get_instance()
+            return FsspecStorage(namespace, args.fsspec_plugin, args.fsspec_extra_params)
         else:
             raise Exception(str(ErrorCodes.EC1001))

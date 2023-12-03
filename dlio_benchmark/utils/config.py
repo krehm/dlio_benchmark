@@ -26,7 +26,7 @@ from typing import List, ClassVar
 from dlio_benchmark.common.constants import MODULE_CONFIG
 from dlio_benchmark.common.enumerations import StorageType, FormatType, Shuffle, ReadType, FileAccess, Compression, \
     FrameworkType, \
-    DataLoaderType, Profiler, DatasetType, DataLoaderSampler
+    DataLoaderType, Profiler, DatasetType, DataLoaderSampler, FsspecPlugin
 from dataclasses import dataclass
 import math
 import os
@@ -53,6 +53,9 @@ class ConfigArguments:
     # Set root as the current directory by default
     storage_root: str = "./"
     storage_type: StorageType = StorageType.LOCAL_FS
+    # fsspec options ignored if storage_type != StorageType.FSSPEC_FS
+    fsspec_plugin: FsspecPlugin = FsspecPlugin.LOCAL_FS
+    fsspec_extra_params = {}
     record_length: int = 64 * 1024
     record_length_stdev: int = 0
     record_length_resize: int = 0
@@ -247,7 +250,7 @@ class ConfigArguments:
                 selected_samples = 0
                 while selected_samples < self.samples_per_thread:
                     process_thread_file_map[rank][thread_index].append((sample_global_list[sample_index], 
-                                                                        os.path.abspath(file_list[file_index]),
+                                                                        file_list[file_index],
                                                                         sample_global_list[sample_index] % self.num_samples_per_file))
                     sample_index += 1
                     selected_samples += 1
@@ -264,7 +267,7 @@ class ConfigArguments:
         for global_sample_index in range(total_samples):
             file_index = int(math.floor(global_sample_index / self.num_samples_per_file))
             sample_index = global_sample_index % self.num_samples_per_file
-            process_thread_file_map[global_sample_index] = (os.path.abspath(file_list[file_index]), sample_index)
+            process_thread_file_map[global_sample_index] = (file_list[file_index], sample_index)
         return process_thread_file_map
 
     @dlp.log
@@ -307,6 +310,10 @@ def LoadConfig(args, config):
             args.storage_type = StorageType(config['storage']['storage_type'])
         if 'storage_root' in config['storage']:
             args.storage_root = config['storage']['storage_root']
+        if 'fsspec_plugin' in config['storage']:
+            args.fsspec_plugin = FsspecPlugin(config['storage']['fsspec_plugin'])
+        if 'fsspec_extra_params' in config['storage']:
+            args.fsspec_extra_params = config['storage']['fsspec_extra_params']
         
     # dataset related settings
     if 'dataset' in config:

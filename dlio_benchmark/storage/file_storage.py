@@ -98,6 +98,10 @@ class FileStorage(DataStorage):
         with open(self.get_uri(id), "r") as fd:
             data = fd.read()
         return data
+
+    @dlp.log
+    def get_flobj(self, uri_path, mode="rb"):
+        return open(uri_path, mode=mode)
     
     def get_basename(self, id):
         return os.path.basename(id)

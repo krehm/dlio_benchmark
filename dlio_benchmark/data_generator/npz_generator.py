@@ -49,8 +49,9 @@ class NPZGenerator(DataGenerator):
             out_path_spec = self.storage.get_uri(self._file_list[i])
             progress(i+1, self.total_files_to_generate, "Generating NPZ Data")
             prev_out_spec = out_path_spec
-            if self.compression != Compression.ZIP:
-                np.savez(out_path_spec, x=records, y=record_labels)
-            else:
-                np.savez_compressed(out_path_spec, x=records, y=record_labels)
+            with self.storage.get_flobj(out_path_spec, mode='wb') as flobj:
+                if self.compression != Compression.ZIP:
+                    np.savez(flobj, x=records, y=record_labels)
+                else:
+                    np.savez_compressed(flobj, x=records, y=record_labels)
         np.random.seed()

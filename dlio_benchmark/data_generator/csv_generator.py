@@ -60,5 +60,6 @@ class CSVGenerator(DataGenerator):
                     out_path_spec = out_path_spec + ".zip"
                 elif self.compression == Compression.XZ:
                     out_path_spec = out_path_spec + ".xz"
-            df.to_csv(out_path_spec, compression=compression)
+            with self.storage.get_flobj(out_path_spec, mode='wb') as flobj:
+                df.to_csv(flobj, compression=compression)
         np.random.seed()

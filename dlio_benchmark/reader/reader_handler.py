@@ -43,6 +43,8 @@ class FormatReader(ABC):
         logging.debug(
             f"Loading {self.__class__.__qualname__} reader on thread {self.thread_index} from rank {self._args.my_rank}")
         self.dataset_type = dataset_type
+        self.storage = StorageFactory().get_storage(self._args.storage_type, self._args.storage_root,
+                                                    self._args.framework)
         self.open_file_map = {}
 
         if FormatReader.read_images is None:

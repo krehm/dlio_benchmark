@@ -38,16 +38,19 @@ class HDF5Reader(FormatReader):
     @dlp.log
     def open(self, filename):
         super().open(filename)
-        return h5py.File(filename, 'r')
+        flobj = self.storage.get_flobj(filename, mode='rb')
+        return h5py.File(flobj, 'r'), flobj
 
     @dlp.log
     def close(self, filename):
-        self.open_file_map[filename].close()
+        super().close(filename)
+        self.open_file_map[filename][0].close()
+        self.open_file_map[filename][1].close()
 
     @dlp.log
     def get_sample(self, filename, sample_index):
         super().get_sample(filename, sample_index)
-        image = self.open_file_map[filename]['records'][sample_index]
+        image = self.open_file_map[filename][0]['records'][sample_index]
         dlp.update(image_size=image.nbytes)
 
     def next(self):

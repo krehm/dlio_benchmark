@@ -55,5 +55,6 @@ class JPEGGenerator(DataGenerator):
                 logging.info(f"Generated file {i}/{self.total_files_to_generate}")
             out_path_spec = self.storage.get_uri(self._file_list[i])
             progress(i+1, self.total_files_to_generate, "Generating JPEG Data")
-            img.save(out_path_spec, format='JPEG', bits=8)
+            with self.storage.get_flobj(out_path_spec, mode='wb') as flobj:
+                img.save(flobj, format='JPEG', bits=8)
         np.random.seed()

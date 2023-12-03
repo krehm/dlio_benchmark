@@ -35,16 +35,18 @@ class NPZReader(FormatReader):
     @dlp.log
     def open(self, filename):
         super().open(filename)
-        return np.load(filename, allow_pickle=True)['x']
+        flobj = self.storage.get_flobj(filename, mode='rb')
+        return np.load(flobj, allow_pickle=True)['x'], flobj
 
     @dlp.log
     def close(self, filename):
         super().close(filename)
+        self.open_file_map[filename][1].close()
 
     @dlp.log
     def get_sample(self, filename, sample_index):
         super().get_sample(filename, sample_index)
-        image = self.open_file_map[filename][..., sample_index]
+        image = self.open_file_map[filename][0][..., sample_index]
         dlp.update(image_size=image.nbytes)
 
     def next(self):

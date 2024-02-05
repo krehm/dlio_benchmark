@@ -189,7 +189,7 @@ reader
      - Description
    * - data_loader
      - tensorflow
-     - select the data loader to use [tensorflow|pytorch|dali]. 
+     - select the data loader to use [tensorflow|pytorch|dali|native_dali]. 
    * - batch_size
      - 1 
      - batch size for training
@@ -226,6 +226,8 @@ reader
   not support ``read_threads=0``, but pytorch does, in which case, the main thread will be doing data loader and no overlap between I/O and compute. 
 
   For pytorch, ``prefetch_size`` is set to be 0, it will be changed to 2. In other words, the default value for ``prefetch_size`` in pytorch is 2. 
+
+  For Dali data loader, we support two options, ``dali`` and ``native_dali```. ``dali`` uses our internal reader, such as ``jpeg_reader``, ``hdf5_reader``, etc, and ``dali.fn.external_source``; whereas ``native_dali`` directly uses Dali readers, such as ``dn.readers.numpy``, ``fn.readers.tfrecord``, and ``fn.readers.file``. 
 
 
 train
@@ -298,7 +300,25 @@ checkpoint
      - performing one checkpointing per certain number of steps specified
    * - model_size
      - 10240
-     - the size of the model in bytes
+     - the size of the model parameters per GPU in bytes
+   * - optimization_groups
+     - []
+     - List of optimization group tensors. Use Array notation for yaml.
+   * - num_layers
+     - 1
+     - Number of layers to checkpoint. Each layer would be checkpointed separately.
+   * - layer_parameters
+     - []
+     - List of parameters per layer. This is used to perform I/O per layer.
+   * - type
+     - rank_zero
+     - Which rank performs this checkpoint. All ranks (all_ranks) or Rank 0 (rank_zero).
+   * - tensor_parallelism
+     - 1
+     - Tensor parallelism for model. Used to determine the number of layer model files.
+   * - pipeline_parallelism
+     - 1
+     - Pipeline parallelism for model.
 
 .. note::
    
@@ -336,25 +356,16 @@ profiling
    * - Parameter
      - Default
      - Description
-   * - profiler
-     - none
-     - specifying the profiler to use [none|iostat|tensorflow|pytorch]
    * - iostat_devices**
      - [sda, sdb]
      - specifying the devices to perform iostat tracing.  
 
 .. note::
    
-   We support following I/O profiling using following profilers: 
+   We support multi-level profiling using:
+    * ``dlio_profiler``: https://github.com/hariharan-devarajan/dlio-profiler. DLIO_PROFILER_ENABLE=1 has to be set to enable profiler.
 
-    * ``darshan``: https://www.mcs.anl.gov/research/projects/darshan/. ``LD_PRELOAD`` has to be set for the darshan runtime library (libdarshan.so) to be loaded properly. 
-
-    * ``iostat``: https://linux.die.net/man/1/iostat. One can specify the command to use for profiling in order to get the profiling for specific disk.   
-    * ``tensorflow`` (tf.profiler): https://www.tensorflow.org/api_docs/python/tf/profiler. This works only for tensorflow framework (and data loader)
-
-    * ``pytorch`` (torch.profiler): https://pytorch.org/docs/stable/profiler.html. This works only for pytorch framework (and data loader).
-
-The YAML files are stored in the `workload`_ folder. 
+The YAML files are stored in the `workload`_ folder.
 It then can be loaded by ```dlio_benchmark``` through hydra (https://hydra.cc/). This will override the default settings. One can override the configurations through command line (https://hydra.cc/docs/advanced/override_grammar/basic/).
 
 

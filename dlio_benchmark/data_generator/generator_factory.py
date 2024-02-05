@@ -38,11 +38,17 @@ class GeneratorFactory(object):
         elif type == FormatType.NPZ:
             from dlio_benchmark.data_generator.npz_generator import NPZGenerator
             return NPZGenerator()
+        elif type == FormatType.NPY:
+            from dlio_benchmark.data_generator.npy_generator import NPYGenerator
+            return NPYGenerator()            
         elif type == FormatType.JPEG:
             from dlio_benchmark.data_generator.jpeg_generator import JPEGGenerator
             return JPEGGenerator()
         elif type == FormatType.PNG:
             from dlio_benchmark.data_generator.png_generator import PNGGenerator
             return PNGGenerator()
+        elif type == FormatType.INDEXED_BINARY or type == FormatType.MMAP_INDEXED_BINARY:
+            from dlio_benchmark.data_generator.indexed_binary_generator import IndexedBinaryGenerator
+            return IndexedBinaryGenerator()
         else:
             raise Exception(str(ErrorCodes.EC1001))

@@ -14,20 +14,21 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import logging
 
 import numpy as np
 from PIL import Image
 
 from dlio_benchmark.common.constants import MODULE_DATA_READER
 from dlio_benchmark.reader.reader_handler import FormatReader
+from dlio_benchmark.utils.utility import utcnow
 from dlio_profiler.logger import fn_interceptor as Profile
 
 dlp = Profile(MODULE_DATA_READER)
 
-
-class JPEGReader(FormatReader):
+class ImageReader(FormatReader):
     """
-    Reader for JPEG files
+    Reader for PNG / JPEG files
     """
 
     @dlp.log_init
@@ -47,6 +48,7 @@ class JPEGReader(FormatReader):
 
     @dlp.log
     def get_sample(self, filename, sample_index):
+        logging.debug(f"{utcnow()} sample_index {sample_index}, {self.image_idx}")
         super().get_sample(filename, sample_index)
         image = self.open_file_map[filename][0]
         dlp.update(image_size=image.nbytes)

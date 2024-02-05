@@ -17,6 +17,29 @@
 
 from enum import Enum
 
+
+class CheckpointMechanismType(Enum):
+    """
+    Different Checkpoint mechanisms.
+    """
+    NONE = 'none'
+    CUSTOM = 'custom'
+    TF_SAVE = 'tf_save'
+    PT_SAVE = 'pt_save'
+
+    def __str__(self):
+        return self.value
+
+class CheckpointLocationType(Enum):
+    """
+    Different types of Checkpointing Locations
+    """
+    RANK_ZERO = 'rank_zero'
+    ALL_RANKS = 'all_ranks'
+
+    def __str__(self):
+        return self.value
+
 class StorageType(Enum):
     """
     Different types of underlying storage
@@ -105,14 +128,17 @@ class FormatType(Enum):
     HDF5 = 'hdf5'
     CSV = 'csv'
     NPZ = 'npz'
+    NPY = 'npy'
     HDF5_OPT = 'hdf5_opt'
     JPEG = 'jpeg'
     PNG = 'png'
+    INDEXED_BINARY = 'indexed_binary'
+    MMAP_INDEXED_BINARY = 'mmap_indexed_binary'
 
     def __str__(self):
         return self.value
 
-    @ staticmethod
+    @staticmethod
     def get_enum(value):
         if FormatType.TFRECORD.value == value:
             return FormatType.TFRECORD
@@ -122,12 +148,18 @@ class FormatType(Enum):
             return FormatType.CSV
         elif FormatType.NPZ.value == value:
             return FormatType.NPZ
+        elif FormatType.NPY.value == value:
+            return FormatType.NPY            
         elif FormatType.HDF5_OPT.value == value:
             return FormatType.HDF5_OPT
         elif FormatType.JPEG.value == value:
             return FormatType.JPEG
         elif FormatType.PNG.value == value:
             return FormatType.PNG
+        elif FormatType.INDEXED_BINARY.value == value:
+            return FormatType.INDEXED_BINARY
+        elif FormatType.MMAP_INDEXED_BINARY.value == value:
+            return FormatType.MMAP_INDEXED_BINARY
 
 class DataLoaderType(Enum):
     """
@@ -136,6 +168,7 @@ class DataLoaderType(Enum):
     TENSORFLOW='tensorflow'
     PYTORCH='pytorch'
     DALI='dali'
+    NATIVE_DALI='native_dali'
     CUSTOM='custom'
     NONE='none'
     
@@ -243,3 +276,20 @@ class Compression(Enum):
 
     def __str__(self):
         return self.value
+
+class MPIState(Enum):
+    """
+    MPI State for forked and spawned processes.
+    """
+    UNINITIALIZED = 0
+    MPI_INITIALIZED = 1
+    CHILD_INITIALIZED = 2
+   
+    @staticmethod
+    def get_enum(value):
+        if MPIState.UNINITIALIZED.value == value:
+            return MPIState.UNINITIALIZED
+        elif MPIState.MPI_INITIALIZE.value == value:
+            return MPIState.MPI_INITIALIZE
+        elif MPIState.CHILD_INITIALIZED.value == value:
+            return MPIState.CHILD_INITIALIZED

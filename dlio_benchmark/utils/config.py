@@ -311,7 +311,8 @@ class ConfigArguments:
         num_threads = 1
         if self.read_threads > 0 and self.data_loader is not DataLoaderType.DALI:
             num_threads = self.read_threads
-        self.samples_per_thread = total_samples / self.comm_size / num_threads
+        samples_per_proc = total_samples//self.comm_size            
+        self.samples_per_thread = samples_per_proc // num_threads
         file_index = 0
         sample_index = 0
         sample_global_list = np.arange(total_samples)
@@ -322,34 +323,46 @@ class ConfigArguments:
                 np.random.seed(self.seed)
             np.random.shuffle(sample_global_list)
         process_thread_file_map = {}
+        abs_path = os.path.abspath(file_list[file_index])
+
         for rank in range(self.comm_size):
+            if rank not in process_thread_file_map:
+                process_thread_file_map[rank] = {}            
             for thread_index in range(num_threads):
-                if rank not in process_thread_file_map:
-                    process_thread_file_map[rank] = {}
+                if (thread_index < samples_per_proc%num_threads):
+                    addition = 1
+                else:
+                    addition = 0
                 if thread_index not in process_thread_file_map[rank]:
                     process_thread_file_map[rank][thread_index] = []
                 selected_samples = 0
-                while selected_samples < self.samples_per_thread:
+                while selected_samples < self.samples_per_thread+addition:
                     process_thread_file_map[rank][thread_index].append((sample_global_list[sample_index],
-                                                                        os.path.abspath(file_list[file_index]),
+                                                                        abs_path,
                                                                         sample_global_list[
-                                                                            sample_index] % self.num_samples_per_file))
+                                                                        sample_index] % self.num_samples_per_file))
+
                     sample_index += 1
                     selected_samples += 1
                     if sample_index >= self.num_samples_per_file:
                         sample_index = 0
                         file_index += 1
-                    if file_index >= num_files:
-                        break
+                        if file_index >= num_files:
+                            break
+                        abs_path = os.path.abspath(file_list[file_index])
         return process_thread_file_map
 
     @dlp.log
     def get_global_map_index(self, file_list, total_samples):
         process_thread_file_map = {}
+        file_index = 0
+        abs_path = os.path.abspath(file_list[file_index]) 
         for global_sample_index in range(total_samples):
-            file_index = int(math.floor(global_sample_index / self.num_samples_per_file))
             sample_index = global_sample_index % self.num_samples_per_file
-            process_thread_file_map[global_sample_index] = (file_list[file_index], sample_index)
+            process_thread_file_map[global_sample_index] = (abs_path, sample_index)
+            if global_sample_index != 0 and global_sample_index % self.num_samples_per_file == 0:
+                file_index += 1
+                abs_path = os.path.abspath(file_list[file_index])  
         return process_thread_file_map
 
     @dlp.log
@@ -474,7 +487,7 @@ def LoadConfig(args, config):
         if 'shuffle_size' in reader:
             args.shuffle_size = reader['shuffle_size']
         if 'sample_shuffle' in reader:
-            args.sample_shuffle = reader['sample_shuffle']
+            args.sample_shuffle = Shuffle(reader['sample_shuffle'])
         if 'read_type' in reader:
             args.read_type = reader['read_type']
         if 'transfer_size' in reader:

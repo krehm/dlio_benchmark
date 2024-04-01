@@ -1,6 +1,6 @@
 model: resnet50
 
-framework: pytorch
+framework: tensorflow
 
 workflow:
  generate_data: False
@@ -13,14 +13,12 @@ dataset:
  record_length_resize: 150528
  data_folder: data/resnet50
  format: tfrecord
-train: 
- computation_time: 0.195
- epochs: 5
+ 
+train:
+ computation_time: 0.098
  
 reader:
- data_loader: dali
+ data_loader: tensorflow
  read_threads: 8
  computation_threads: 8
  batch_size: 64
- batch_size_eval: 128
- dont_use_mmap: True

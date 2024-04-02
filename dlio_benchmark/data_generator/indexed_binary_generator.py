@@ -113,9 +113,9 @@ class IndexedBinaryGenerator(DataGenerator):
                 progress(i + 1, self.total_files_to_generate, "Generating Indexed Binary Data")
                 prev_out_spec = out_path_spec
                 written_bytes = 0
-                data_file = open(out_path_spec, "wb")
-                off_file = open(out_path_spec_off_idx, "wb")
-                sz_file = open(out_path_spec_sz_idx, "wb")
+                data_flobj = self.storage.get_flobj(out_path_spec, mode='wb')
+                off_flobj = self.storage.get_flobj(out_path_spec_off_idx, mode='wb')
+                sz_flobj = self.storage.get_flobj(out_path_spec_sz_idx, mode='wb')
                 records = np.random.randint(255, size=write_size, dtype=np.uint8)
                 while written_bytes < total_size:
                     data_to_write = write_size if written_bytes + write_size <= total_size else total_size - written_bytes
@@ -124,24 +124,24 @@ class IndexedBinaryGenerator(DataGenerator):
                     # Write data
                     myfmt = 'B' * data_to_write
                     binary_data = struct.pack(myfmt, *records[:data_to_write])
-                    data_file.write(binary_data)
+                    data_flobj.write(binary_data)
 
                     # Write offsets
                     myfmt = 'Q' * samples_to_write
                     offsets = range(0, data_to_write, sample_size)
                     offsets = offsets[:samples_to_write]
                     binary_offsets = struct.pack(myfmt, *offsets)
-                    off_file.write(binary_offsets)
+                    off_flobj.write(binary_offsets)
 
                     # Write sizes
                     myfmt = 'Q' * samples_to_write
                     sample_sizes = [sample_size] * samples_to_write
                     binary_sizes = struct.pack(myfmt, *sample_sizes)
-                    sz_file.write(binary_sizes)
+                    sz_flobj.write(binary_sizes)
 
                     written_bytes = written_bytes + data_to_write
-                data_file.close()
-                off_file.close()
-                sz_file.close()
+                data_flobj.close()
+                off_flobj.close()
+                sz_flobj.close()
             np.random.seed()
         DLIOMPI.get_instance().comm().Barrier()

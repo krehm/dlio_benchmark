@@ -21,7 +21,7 @@ import struct
 
 from dlio_benchmark.common.constants import MODULE_DATA_READER
 from dlio_benchmark.common.enumerations import DataLoaderSampler
-from dlio_benchmark.reader.reader_handler import FormatReader
+from dlio_benchmark.reader.reader_handler import FormatReader, OFMAP_FLOBJ
 from dlio_profiler.logger import fn_interceptor as Profile
 
 dlp = Profile(MODULE_DATA_READER)
@@ -77,23 +77,24 @@ class IndexedBinaryReader(FormatReader):
     @dlp.log
     def open(self, filename):
         super().open(filename)
-        return open(filename, "rb")
+        flobj = self.storage.get_flobj(filename, mode='rb')
+        return { OFMAP_FLOBJ: flobj }
 
     @dlp.log
     def close(self, filename):
         super().close(filename)
-        self.open_file_map[filename].close()
+        self.open_file_map[filename][OFMAP_FLOBJ].close()
 
     @dlp.log
     def get_sample(self, filename, sample_index):
         super().get_sample(filename, sample_index)
-        file = self.open_file_map[filename]
+        flobj = self.open_file_map[filename][OFMAP_FLOBJ]
         offset = self.file_map[filename][0][sample_index]
         size = self.file_map[filename][1][sample_index]
         logging.debug(f"reading sample from offset {offset} of size {size} from file {filename}")
-        file.seek(offset)
+        flobj.seek(offset)
         image = np.empty(size, dtype=np.uint8)
-        file.readinto(image)
+        flobj.readinto(image)
         dlp.update(image_size=size)
 
     def next(self):

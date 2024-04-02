@@ -29,7 +29,7 @@ from dlio_benchmark.common.constants import MODULE_DATA_GENERATOR
 dlp = Profile(MODULE_DATA_GENERATOR)
 
 """
-Generator for creating data in NPZ format.
+Generator for creating data in NPY format.
 """
 class NPYGenerator(DataGenerator):
     def __init__(self):
@@ -51,5 +51,6 @@ class NPYGenerator(DataGenerator):
             out_path_spec = self.storage.get_uri(self._file_list[i])
             progress(i+1, self.total_files_to_generate, "Generating NPY Data")
             prev_out_spec = out_path_spec
-            np.save(out_path_spec, records)
+            with self.storage.get_flobj(out_path_spec, mode='wb') as flobj:
+                np.save(flobj, records)
         np.random.seed()

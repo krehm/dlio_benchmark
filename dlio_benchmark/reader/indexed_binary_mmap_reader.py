@@ -21,7 +21,7 @@ import struct
 
 from dlio_benchmark.common.constants import MODULE_DATA_READER
 from dlio_benchmark.common.enumerations import DataLoaderSampler
-from dlio_benchmark.reader.reader_handler import FormatReader
+from dlio_benchmark.reader.reader_handler import FormatReader, OFMAP_MEMMAP, OFMAP_FLOBJ
 from dlio_profiler.logger import fn_interceptor as Profile
 
 dlp = Profile(MODULE_DATA_READER)
@@ -77,15 +77,17 @@ class IndexedBinaryMMapReader(FormatReader):
     @dlp.log
     def open(self, filename):
         super().open(filename)
-        bin_buffer_mmap = np.memmap(filename, mode='r', order='C')
+        flobj = self.storage.get_flobj(filename, mode='rb')
+        bin_buffer_mmap = np.memmap(flobj, mode='r', order='C')
         bin_buffer = memoryview(bin_buffer_mmap)
         self.buffer_map[filename] = np.frombuffer(bin_buffer, dtype=np.uint8)
-        return bin_buffer_mmap
+        return { OFMAP_MEMMAP : bin_buffer_mmap, OFMAP_FLOBJ: flobj }
 
     @dlp.log
     def close(self, filename):
         super().close(filename)
-        self.open_file_map[filename]._mmap.close()
+        self.open_file_map[filename][OFMAP_FLOBJ]._mmap.close()
+        self.open_file_map[filename][OFMAP_FLOBJ].close()
 
     @dlp.log
     def get_sample(self, filename, sample_index):

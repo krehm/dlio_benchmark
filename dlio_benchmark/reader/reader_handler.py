@@ -31,6 +31,9 @@ from time import sleep
 import glob
 from dlio_benchmark.common.constants import MODULE_DATA_READER
 
+OFMAP_SAMPLE = 'ofmap_sample'
+OFMAP_FLOBJ = ' ofmap_flobj'
+OFMAP_MEMMAP = ' ofmap_memmap'
 
 dlp = Profile(MODULE_DATA_READER)
 
@@ -83,7 +86,7 @@ class FormatReader(ABC):
 
         for global_sample_idx, filename, sample_index in self._args.file_map[self.thread_index]:
             self.image_idx = global_sample_idx
-            if filename not in self.open_file_map or self.open_file_map[filename] is None:
+            if filename not in self.open_file_map:
                 self.open_file_map[filename] = self.open(filename)
             self.get_sample(filename, sample_index)
             self.preprocess()
@@ -100,7 +103,7 @@ class FormatReader(ABC):
                 batch = []
             if image_processed % self._args.num_samples_per_file == 0:
                 self.close(filename)
-                self.open_file_map[filename] = None
+                del self.open_file_map[filename]
             if is_last:
                 break
 
@@ -111,13 +114,13 @@ class FormatReader(ABC):
         filename, sample_index = self._args.global_index_map[global_sample_idx]
         logging.debug(f"{utcnow()} read_index {filename}, {sample_index}")
         FormatReader.read_images += 1
-        if self._args.read_type is ReadType.ON_DEMAND or filename not in self.open_file_map or self.open_file_map[filename] is None:
+        if self._args.read_type is ReadType.ON_DEMAND or filename not in self.open_file_map:
             self.open_file_map[filename] = self.open(filename)
         self.get_sample(filename, sample_index)
         self.preprocess()
         if self._args.read_type is ReadType.ON_DEMAND:
             self.close(filename)
-            self.open_file_map[filename] = None
+            del self.open_file_map[filename]
         return self._args.resized_image
 
     @abstractmethod
@@ -125,7 +128,7 @@ class FormatReader(ABC):
         for filename, sample_index in self._args.file_map:
             if filename in self.open_file_map:
                 self.close(filename)
-                self.open_file_map[filename] = None
+                del self.open_file_map[filename]
 
     @dlp.log
     def resize(self, image):

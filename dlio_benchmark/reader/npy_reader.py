@@ -17,7 +17,7 @@
 import numpy as np
 
 from dlio_benchmark.common.constants import MODULE_DATA_READER
-from dlio_benchmark.reader.reader_handler import FormatReader
+from dlio_benchmark.reader.reader_handler import FormatReader, OFMAP_SAMPLE, OFMAP_FLOBJ
 from dlio_profiler.logger import fn_interceptor as Profile
 
 dlp = Profile(MODULE_DATA_READER)
@@ -36,17 +36,17 @@ class NPYReader(FormatReader):
     def open(self, filename):
         super().open(filename)
         flobj = self.storage.get_flobj(filename, mode='rb')
-        return np.load(flobj), flobj
+        return { OFMAP_SAMPLE: np.load(flobj), OFMAP_FLOBJ: flobj }
 
     @dlp.log
     def close(self, filename):
         super().close(filename)
-        self.open_file_map[filename][1].close()
+        self.open_file_map[filename][OFMAP_FLOBJ].close()
 
     @dlp.log
     def get_sample(self, filename, sample_index):
         super().get_sample(filename, sample_index)
-        image = self.open_file_map[filename][..., sample_index]
+        image = self.open_file_map[filename][OFMAP_SAMPLE][..., sample_index]
         dlp.update(image_size=image.nbytes)
 
     def next(self):
